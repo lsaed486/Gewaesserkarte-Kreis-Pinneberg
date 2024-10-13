@@ -124,7 +124,7 @@
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: [9.7945, 53.6617],
+        center: [9.7945, 53.6617], // Startposition der Karte
         zoom: 9
     });
 
@@ -134,7 +134,7 @@
         const name = document.getElementById('markerName').value;
         const color = document.getElementById('markerColor').value;
 
-        const lngLat = map.getCenter();
+        const lngLat = map.getCenter(); // Marker erscheint in der Mitte der Karte
 
         const el = document.createElement('div');
         el.className = 'markerColor';
