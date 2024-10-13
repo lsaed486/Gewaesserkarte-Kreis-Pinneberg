@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Interaktive Angelkarte für den Kreis Pinneberg und Umgebung">
     <title>Interaktive Angelkarte Pinneberg</title>
+    <!-- Mapbox CSS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
     <style>
         body {
@@ -26,47 +27,7 @@
             margin-top: 20px;
         }
 
-        .marker-input {
-            margin-bottom: 10px;
-        }
-
-        .marker-color {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        #marker-name, #color-name {
-            width: 200px;
-            margin-bottom: 10px;
-        }
-
-        #notes-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        #save-notes, #delete-marker {
-            margin-top: 10px;
-        }
-
-        .popup-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .close-popup {
-            cursor: pointer;
-            color: red;
-            font-weight: bold;
-            align-self: flex-end;
-            margin-bottom: 10px;
-        }
-
-        #legend {
+        .legend {
             background-color: white;
             padding: 10px;
             position: absolute;
@@ -76,20 +37,35 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        #legend h3 {
+        .legend h3 {
             margin: 0 0 10px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
         }
 
         .legend-color {
             width: 20px;
             height: 20px;
+            display: inline-block;
             margin-right: 10px;
+        }
+
+        .marker {
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .popup-content {
+            width: 200px;
+        }
+
+        .close-popup {
+            cursor: pointer;
+            float: right;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -97,30 +73,31 @@
 
 <header>
     <h1>Interaktive Angelkarte Pinneberg</h1>
-    <p>Setze Marker für Gewässer:</p>
-    <input type="text" id="marker-name" placeholder="Marker Name" class="marker-input">
-    <input type="text" id="color-name" placeholder="Farbe benennen" class="marker-input">
-    <div id="color-picker">
-        <div class="marker-color" style="background-color: #0077BE;" data-color="#0077BE"></div>
-        <div class="marker-color" style="background-color: #00BE77;" data-color="#00BE77"></div>
-        <div class="marker-color" style="background-color: #BE7700;" data-color="#BE7700"></div>
-        <div class="marker-color" style="background-color: #FF5733;" data-color="#FF5733"></div>
-        <div class="marker-color" style="background-color: #9B59B6;" data-color="#9B59B6"></div>
-        <div class="marker-color" style="background-color: #3498DB;" data-color="#3498DB"></div>
-        <div class="marker-color" style="background-color: #F39C12;" data-color="#F39C12"></div>
-        <div class="marker-color" style="background-color: #2ECC71;" data-color="#2ECC71"></div>
-    </div>
-    <button id="set-marker">Marker Setzen</button>
+    <p>Wählen Sie ein Gewässer aus, um Informationen hinzuzufügen.</p>
 </header>
 
 <div id="map"></div>
 
-<!-- Legende -->
-<div id="legend">
-    <h3>Legende</h3>
+<!-- Legende für die Markerfarben -->
+<div class="legend">
+    <h3>Markerfarben</h3>
     <div id="legend-content"></div>
 </div>
 
+<div>
+    <h3>Marker hinzufügen</h3>
+    <input type="text" id="marker-name" placeholder="Name des Markers">
+    <input type="text" id="color-name" placeholder="Farbename">
+    <button id="set-marker">Marker setzen</button>
+    <div class="marker-color" data-color="#0077BE" style="background-color: #0077BE; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+    <div class="marker-color" data-color="#00BE77" style="background-color: #00BE77; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+    <div class="marker-color" data-color="#BE7700" style="background-color: #BE7700; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+    <div class="marker-color" data-color="#FF5733" style="background-color: #FF5733; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+    <div class="marker-color" data-color="#33FF57" style="background-color: #33FF57; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+    <div class="marker-color" data-color="#3357FF" style="background-color: #3357FF; display: inline-block; width: 20px; height: 20px; margin: 5px; cursor: pointer;"></div>
+</div>
+
+<!-- Mapbox JS -->
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoibHNhZWQ0ODYiLCJhIjoiY20yNmxsNGZkMHhqbTJrc2o0dWg1OTRuYyJ9.iwQkgt5FL8kPQgpBozsakQ';
@@ -128,7 +105,7 @@
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: [9.7945, 53.6617], // Startpunkt der Karte
+        center: [9.7945, 53.6617],
         zoom: 9
     });
 
@@ -192,8 +169,16 @@
 
         markerEl.title = name;
 
+        // Speichert initiale Marker-Daten
+        markerData[name] = {
+            notes: '',
+            position: marker.getLngLat()
+        };
+
         // Marker-Klick-Ereignis
         markerEl.addEventListener('click', function() {
+            const markerInfo = markerData[name]; // Greift auf die gespeicherten Marker-Daten zu
+
             const popup = new mapboxgl.Popup({ offset: 25, closeOnClick: false })
                 .setLngLat(marker.getLngLat())
                 .setHTML(`
@@ -201,7 +186,7 @@
                         <span class="close-popup">x</span>
                         <h3>${name}</h3>
                         <p>Notizen hinzufügen:</p>
-                        <textarea rows="4" cols="20" placeholder="Notizen..."></textarea>
+                        <textarea rows="4" cols="20" placeholder="Notizen...">${markerInfo.notes || ''}</textarea>
                         <button id="save-notes">Speichern</button>
                         <button id="delete-marker">Löschen</button>
                     </div>`)
@@ -216,8 +201,7 @@
             // Notizen speichern
             popupContent.querySelector('#save-notes').addEventListener('click', function() {
                 const notesText = popupContent.querySelector('textarea').value;
-                const markerPosition = marker.getLngLat();
-                markerData[name] = { notes: notesText, position: markerPosition };
+                markerData[name].notes = notesText; // Speichert Notizen im Marker-Datenobjekt
 
                 alert('Notizen gespeichert!');
             });
@@ -226,7 +210,7 @@
             popupContent.querySelector('#delete-marker').addEventListener('click', function() {
                 marker.remove();
                 popup.remove();
-                delete markerData[name];
+                delete markerData[name]; // Löscht den Marker aus den Daten
                 alert('Marker gelöscht!');
             });
         });
