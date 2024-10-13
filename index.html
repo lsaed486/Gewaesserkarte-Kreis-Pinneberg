@@ -136,21 +136,27 @@
             .addTo(map)
             .setPopup(new mapboxgl.Popup({ offset: 25 })
                 .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button>`))
-            .getElement().addEventListener('mousedown', function (e) {
-                // Marker verschieben
-                const onMouseMove = (e) => {
-                    const newLngLat = map.unproject([e.clientX, e.clientY]);
-                    marker.setLngLat([newLngLat.lng, newLngLat.lat]);
-                };
-
-                const onMouseUp = () => {
-                    map.off('mousemove', onMouseMove);
-                    map.off('mouseup', onMouseUp);
-                };
-
-                map.on('mousemove', onMouseMove);
-                map.once('mouseup', onMouseUp);
+            .getElement().addEventListener('click', function () {
+                marker.togglePopup(); // Popup mit einem Klick öffnen/schließen
             });
+
+        // Marker drag & drop
+        el.addEventListener('mousedown', function (e) {
+            e.preventDefault(); // Verhindern, dass die Karte gezogen wird
+
+            const onMouseMove = (e) => {
+                const newLngLat = map.unproject([e.clientX, e.clientY]);
+                marker.setLngLat([newLngLat.lng, newLngLat.lat]);
+            };
+
+            const onMouseUp = () => {
+                map.off('mousemove', onMouseMove);
+                map.off('mouseup', onMouseUp);
+            };
+
+            map.on('mousemove', onMouseMove);
+            map.once('mouseup', onMouseUp);
+        });
 
         markers[name] = { marker, color, notes: [] };
 
