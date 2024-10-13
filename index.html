@@ -12,20 +12,17 @@
             margin: 0;
             padding: 0;
         }
-
         header {
             background-color: #3B5998;
             padding: 15px 0;
             color: white;
             text-align: center;
         }
-
         #map {
             width: 100%;
             height: 600px;
             margin-top: 20px;
         }
-
         .legend {
             background-color: white;
             padding: 10px;
@@ -35,201 +32,128 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
-        .legend h3 {
-            margin: 0 0 10px;
+        .marker {
+            cursor: grab;
         }
-
-        .legend div {
-            display: flex;
-            align-items: center;
+        .popup {
+            max-width: 200px;
         }
-
-        .legend div span {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .markerColor {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-block;
-            margin: 5px;
-            cursor: pointer;
-        }
-
-        .note-container {
-            margin-top: 10px;
-        }
-
-        .note {
-            background: #f0f0f0;
-            border-radius: 5px;
-            padding: 5px;
-            margin-top: 5px;
-            position: relative;
-        }
-
-        .note button {
+        .controls {
             position: absolute;
-            right: 5px;
-            top: 5px;
-            border: none;
-            background: transparent;
-            color: red;
-            cursor: pointer;
-        }
-
-        .delete-button {
-            margin-top: 10px;
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 5px;
-            cursor: pointer;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
+    <header>
+        <h1>Interaktive Angelkarte Pinneberg</h1>
+        <p>Fügen Sie Gewässermarker hinzu und verwalten Sie Notizen.</p>
+    </header>
 
-<header>
-    <h1>Interaktive Angelkarte Pinneberg</h1>
-    <input type="text" id="markerName" placeholder="Marker Name">
-    <select id="markerColor">
-        <option value="#0077BE">Blau</option>
-        <option value="#00BE77">Grün</option>
-        <option value="#BE7700">Braun</option>
-        <option value="#FF5733">Orange</option>
-        <option value="#FFC300">Gelb</option>
-        <option value="#C70039">Rot</option>
-        <option value="#581845">Violett</option>
-    </select>
-    <button id="addMarker">Marker hinzufügen</button>
-</header>
+    <div class="controls">
+        <label for="marker-name">Marker Name:</label>
+        <input type="text" id="marker-name" placeholder="Marker Name"><br>
+        <label for="marker-color">Marker Farbe:</label>
+        <input type="color" id="marker-color" value="#0077BE"><br>
+        <button id="add-marker">Marker Hinzufügen</button>
+    </div>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<div class="legend">
-    <h3>Legende</h3>
-    <div id="legendContent"></div>
-</div>
+    <div class="legend" id="legend">
+        <h3>Legende</h3>
+        <div id="legend-content"></div>
+    </div>
 
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-<script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoibHNhZWQ0ODYiLCJhIjoiY20yNmxsNGZkMHhqbTJrc2o0dWg1OTRuYyJ9.iwQkgt5FL8kPQgpBozsakQ';
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibHNhZWQ0ODYiLCJhIjoiY20yNmxsNGZkMHhqbTJrc2o0dWg1OTRuYyJ9.iwQkgt5FL8kPQgpBozsakQ';
+        
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [9.7945, 53.6617], 
+            zoom: 9 
+        });
 
-    const map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
-        center: [9.7945, 53.6617], // Startposition der Karte
-        zoom: 9
-    });
+        let markers = [];
 
-    let markers = {};
+        document.getElementById('add-marker').addEventListener('click', function() {
+            const name = document.getElementById('marker-name').value;
+            const color = document.getElementById('marker-color').value;
 
-    document.getElementById('addMarker').addEventListener('click', function () {
-        const name = document.getElementById('markerName').value;
-        const color = document.getElementById('markerColor').value;
+            // Marker erstellen und in der Mitte der Karte platzieren
+            const markerElement = document.createElement('div');
+            markerElement.className = 'marker';
+            markerElement.style.backgroundColor = color;
+            markerElement.style.width = '20px';
+            markerElement.style.height = '20px';
+            markerElement.style.borderRadius = '50%';
 
-        const lngLat = map.getCenter(); // Marker erscheint in der Mitte der Karte
+            const marker = new mapboxgl.Marker(markerElement)
+                .setLngLat(map.getCenter())
+                .addTo(map);
 
-        const el = document.createElement('div');
-        el.className = 'markerColor';
-        el.style.backgroundColor = color;
+            // Popup für Marker
+            const popup = new mapboxgl.Popup({ closeOnClick: false })
+                .setHTML(`<div class="popup"><strong>${name}</strong><br><button class="delete-marker">Löschen</button></div>`)
+                .setLngLat(map.getCenter())
+                .addTo(map);
 
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat(lngLat)
-            .addTo(map)
-            .setPopup(new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`
-                    <h3>${name}</h3>
-                    <div class="note-container" id="${name}-notes"></div>
-                    <textarea placeholder="Notizen..."></textarea>
-                    <button onclick="saveNotes('${name}')">Speichern</button>
-                    <button class="delete-button" onclick="deleteMarker('${name}')">Marker löschen</button>
-                `))
-            .getElement().addEventListener('click', function () {
-                marker.togglePopup(); // Popup mit einem Klick öffnen/schließen
+            // Marker verschieben
+            markerElement.addEventListener('mousedown', function() {
+                markerElement.style.cursor = 'grabbing';
+                function moveMarker(e) {
+                    const lngLat = map.unproject([e.clientX, e.clientY]);
+                    marker.setLngLat(lngLat);
+                    popup.setLngLat(lngLat);
+                }
+                map.on('mousemove', moveMarker);
+
+                function dropMarker() {
+                    markerElement.style.cursor = 'grab';
+                    map.off('mousemove', moveMarker);
+                    map.off('mouseup', dropMarker);
+                }
+                map.on('mouseup', dropMarker);
             });
 
-        // Marker drag & drop
-        el.addEventListener('mousedown', function (e) {
-            e.preventDefault(); // Verhindern, dass die Karte gezogen wird
+            // Marker löschen
+            popup.getElement().querySelector('.delete-marker').addEventListener('click', function() {
+                marker.remove();
+                popup.remove();
+                markers = markers.filter(m => m !== marker);
+                updateLegend();
+            });
 
-            const onMouseMove = (e) => {
-                const newLngLat = map.unproject([e.clientX, e.clientY]);
-                marker.setLngLat([newLngLat.lng, newLngLat.lat]);
-            };
-
-            const onMouseUp = () => {
-                map.off('mousemove', onMouseMove);
-                map.off('mouseup', onMouseUp);
-            };
-
-            map.on('mousemove', onMouseMove);
-            map.once('mouseup', onMouseUp);
+            markers.push(marker);
+            updateLegend();
         });
 
-        markers[name] = { marker, color, notes: [] };
+        function updateLegend() {
+            const legendContent = document.getElementById('legend-content');
+            legendContent.innerHTML = '';
+            markers.forEach((marker, index) => {
+                const name = document.getElementById('marker-name').value;
+                const color = marker.getElement().style.backgroundColor;
+                legendContent.innerHTML += `<div style="color: ${color}">${name} <button class="delete-legend" data-index="${index}">Löschen</button></div>`;
+            });
 
-        updateLegend(name, color);
-    });
-
-    function updateLegend(name, color) {
-        const legendContent = document.getElementById('legendContent');
-        const legendItem = document.createElement('div');
-        legendItem.innerHTML = `<span style="background-color:${color};"></span> ${name}`;
-        legendContent.appendChild(legendItem);
-    }
-
-    window.saveNotes = function (name) {
-        const notesContainer = document.getElementById(`${name}-notes`);
-        const textarea = document.querySelector(`textarea`);
-
-        if (textarea.value) {
-            markers[name].notes.push(textarea.value);
-            displayNotes(name);
-            textarea.value = ''; // Textfeld leeren
+            // Löschen-Buttons in der Legende
+            document.querySelectorAll('.delete-legend').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = button.getAttribute('data-index');
+                    markers[index].remove();
+                    markers.splice(index, 1);
+                    updateLegend();
+                });
+            });
         }
-    }
-
-    function displayNotes(name) {
-        const notesContainer = document.getElementById(`${name}-notes`);
-        notesContainer.innerHTML = ''; // Vorherige Notizen löschen
-
-        markers[name].notes.forEach((note, index) => {
-            const noteDiv = document.createElement('div');
-            noteDiv.className = 'note';
-            noteDiv.innerHTML = `${note} <button onclick="deleteNote('${name}', ${index})">✖</button>`;
-            notesContainer.appendChild(noteDiv);
-        });
-    }
-
-    window.deleteNote = function (name, index) {
-        markers[name].notes.splice(index, 1);
-        displayNotes(name);
-    }
-
-    window.deleteMarker = function (name) {
-        const marker = markers[name].marker;
-        marker.remove(); // Marker von der Karte entfernen
-        delete markers[name]; // Marker aus dem Objekt löschen
-        document.getElementById(`${name}-notes`).innerHTML = ''; // Notizen löschen
-        const legendContent = document.getElementById('legendContent');
-        const legendItems = legendContent.children;
-
-        for (let i = 0; i < legendItems.length; i++) {
-            if (legendItems[i].innerText.includes(name)) {
-                legendContent.removeChild(legendItems[i]);
-                break;
-            }
-        }
-    }
-
-</script>
-
+    </script>
 </body>
 </html>
