@@ -101,7 +101,7 @@
 
             // Popup für Marker
             const popup = new mapboxgl.Popup({ closeOnClick: false })
-                .setHTML(`<div class="popup"><strong>${name}</strong><br><button class="delete-marker">Löschen</button></div>`)
+                .setHTML(`<div class="popup"><strong>${name}</strong><br><textarea id="notes-${name}" placeholder="Notizen hier..."></textarea><br><button class="save-notes">Speichern</button><button class="delete-marker">Löschen</button></div>`)
                 .setLngLat(map.getCenter())
                 .addTo(map);
 
@@ -121,6 +121,12 @@
                     map.off('mouseup', dropMarker);
                 }
                 map.on('mouseup', dropMarker);
+            });
+
+            // Notizen speichern
+            popup.getElement().querySelector('.save-notes').addEventListener('click', function() {
+                const notes = document.getElementById(`notes-${name}`).value;
+                popup.setHTML(`<div class="popup"><strong>${name}</strong><br><div>${notes}</div><button class="delete-marker">Löschen</button></div>`);
             });
 
             // Marker löschen
