@@ -135,7 +135,7 @@
             .setLngLat(lngLat)
             .addTo(map)
             .setPopup(new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button>`))
+                .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button><button onclick="deleteMarker('${name}', this)">Marker löschen</button>`))
             .getElement().addEventListener('click', function () {
                 marker.togglePopup(); // Popup mit einem Klick öffnen/schließen
             });
@@ -196,6 +196,14 @@
     window.deleteNote = function (name, index) {
         markers[name].notes.splice(index, 1);
         displayNotes(name);
+    }
+
+    window.deleteMarker = function (name, btn) {
+        const marker = markers[name].marker;
+        marker.remove(); // Marker von der Karte entfernen
+        delete markers[name]; // Marker aus dem Objekt löschen
+        document.getElementById(`${name}-notes`).innerHTML = ''; // Notizen löschen
+        btn.parentElement.parentElement.style.display = 'none'; // Popup ausblenden
     }
 
 </script>
