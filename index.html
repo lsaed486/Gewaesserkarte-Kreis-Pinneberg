@@ -43,8 +43,9 @@
             cursor: pointer;
         }
 
-        #marker-name {
+        #marker-name, #color-name {
             width: 200px;
+            margin-bottom: 10px;
         }
 
         #notes-container {
@@ -69,6 +70,32 @@
             align-self: flex-end;
             margin-bottom: 10px;
         }
+
+        #legend {
+            background-color: white;
+            padding: 10px;
+            position: absolute;
+            bottom: 30px;
+            left: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #legend h3 {
+            margin: 0 0 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -77,15 +104,24 @@
         <h1>Interaktive Angelkarte Pinneberg</h1>
         <p>Setze Marker für Gewässer:</p>
         <input type="text" id="marker-name" placeholder="Marker Name" class="marker-input">
-        <div>
+        <input type="text" id="color-name" placeholder="Farbe benennen" class="marker-input">
+        <div id="color-picker">
             <div class="marker-color" style="background-color: #0077BE;" data-color="#0077BE"></div>
             <div class="marker-color" style="background-color: #00BE77;" data-color="#00BE77"></div>
             <div class="marker-color" style="background-color: #BE7700;" data-color="#BE7700"></div>
+            <div class="marker-color" style="background-color: #FF5733;" data-color="#FF5733"></div>
+            <div class="marker-color" style="background-color: #9B59B6;" data-color="#9B59B6"></div>
         </div>
         <button id="set-marker">Marker Setzen</button>
     </header>
 
     <div id="map"></div>
+
+    <!-- Legende -->
+    <div id="legend">
+        <h3>Legende</h3>
+        <div id="legend-content"></div>
+    </div>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
@@ -100,6 +136,7 @@
 
         let selectedColor = '#0077BE'; // Standardfarbe für Marker
         let markerData = {}; // Speichert die Notizen und Positionen für jeden Marker
+        let legendData = {}; // Speichert die Farbe und den Namen für die Legende
 
         // Farbe auswählen
         document.querySelectorAll('.marker-color').forEach(colorDiv => {
@@ -110,12 +147,35 @@
             });
         });
 
+        // Legende aktualisieren
+        function updateLegend() {
+            const legendContent = document.getElementById('legend-content');
+            legendContent.innerHTML = ''; // Leere die Legende
+            for (let color in legendData) {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-color" style="background-color: ${color};"></div>
+                    <span>${legendData[color]}</span>
+                `;
+                legendContent.appendChild(legendItem);
+            }
+        }
+
         // Marker setzen
         document.getElementById('set-marker').addEventListener('click', function() {
             const name = document.getElementById('marker-name').value;
-            if (!name) {
-                alert('Bitte geben Sie einen Namen für den Marker ein.');
+            const colorName = document.getElementById('color-name').value;
+
+            if (!name || !colorName) {
+                alert('Bitte geben Sie sowohl einen Namen für den Marker als auch eine Farbbezeichnung ein.');
                 return;
+            }
+
+            // Füge Farbe zur Legende hinzu
+            if (!legendData[selectedColor]) {
+                legendData[selectedColor] = colorName;
+                updateLegend();
             }
 
             const markerEl = document.createElement('div');
@@ -130,42 +190,38 @@
                 draggable: true
             })
             .setLngLat(map.getCenter()) // Marker erscheint in der Mitte der Karte
-            .setPopup(new mapboxgl.Popup({ offset: 25, closeOnClick: false })
-                .setHTML(`<div class="popup-content">
+            .addTo(map);
+
+            markerEl.title = name;
+
+            // Marker-Klick-Ereignis
+            markerEl.addEventListener('click', function() {
+                const popup = new mapboxgl.Popup({ offset: 25, closeOnClick: false })
+                    .setLngLat(marker.getLngLat())
+                    .setHTML(`
+                        <div class="popup-content">
                             <span class="close-popup">x</span>
                             <h3>${name}</h3>
                             <p>Notizen hinzufügen:</p>
                             <textarea rows="4" cols="20" placeholder="Notizen..."></textarea>
                             <button id="save-notes">Speichern</button>
-                          </div>`))
-            .addTo(map);
+                        </div>`)
+                    .addTo(map);
 
-            markerEl.title = name;
-            marker.togglePopup(); // Popup sofort anzeigen
+                // Popup-Schließfunktion
+                const popupContent = popup.getElement();
+                popupContent.querySelector('.close-popup').addEventListener('click', function() {
+                    popup.remove(); // Popup schließen
+                });
 
-            // Tooltip mit Marker-Namen anzeigen
-            markerEl.addEventListener('mouseenter', function() {
-                marker.togglePopup();
-            });
+                // Notizen speichern
+                popupContent.querySelector('#save-notes').addEventListener('click', function() {
+                    const notesText = popupContent.querySelector('textarea').value;
+                    const markerPosition = marker.getLngLat();
+                    markerData[name] = { notes: notesText, position: markerPosition };
 
-            markerEl.addEventListener('mouseleave', function() {
-                marker.togglePopup();
-            });
-
-            // Popup dauerhaft offen lassen und mit "x" schließen
-            const popupContent = marker.getPopup().getDOMContent();
-            const closeBtn = popupContent.querySelector('.close-popup');
-            closeBtn.addEventListener('click', function() {
-                marker.getPopup().remove(); // Popup schließen
-            });
-
-            // Notizen speichern
-            popupContent.querySelector('#save-notes').addEventListener('click', function() {
-                const notesText = popupContent.querySelector('textarea').value;
-                const markerPosition = marker.getLngLat();
-                markerData[name] = { notes: notesText, position: markerPosition };
-
-                alert('Notizen gespeichert!');
+                    alert('Notizen gespeichert!');
+                });
             });
 
             // Funktion zum Speichern der Markerposition nach dem Verschieben
