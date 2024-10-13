@@ -28,6 +28,7 @@
 
         .note-area {
             display: none;
+            margin-top: 10px;
         }
 
         .marker-input {
@@ -40,6 +41,20 @@
             display: inline-block;
             margin-right: 10px;
             cursor: pointer;
+        }
+
+        #marker-name {
+            width: 200px;
+        }
+
+        #notes-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        #save-notes {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -81,6 +96,8 @@
             });
         });
 
+        let markerData = {}; // Speichert die Notizen und Positionen für jeden Marker
+
         // Marker setzen
         document.getElementById('set-marker').addEventListener('click', function() {
             const name = document.getElementById('marker-name').value;
@@ -96,16 +113,18 @@
             markerEl.style.height = '20px';
             markerEl.style.borderRadius = '50%';
 
-            const marker = new mapboxgl.Marker(markerEl)
-                .setLngLat(map.getCenter())
-                .setPopup(new mapboxgl.Popup({ offset: 25 })
-                    .setHTML(`<h3>${name}</h3><p><a href="#" class="toggle-notes">Notizen hinzufügen</a></p><div class="note-area"><textarea rows="4" cols="20" placeholder="Notizen..."></textarea></div>`))
-                .addTo(map);
+            const marker = new mapboxgl.Marker({
+                element: markerEl,
+                draggable: true
+            })
+            .setLngLat(map.getCenter())
+            .setPopup(new mapboxgl.Popup({ offset: 25 })
+                .setHTML(`<h3>${name}</h3><p><a href="#" class="toggle-notes">Notizen hinzufügen</a></p><div class="note-area"><textarea rows="4" cols="20" placeholder="Notizen..."></textarea><button id="save-notes">Speichern</button></div>`))
+            .addTo(map);
 
-            // Tooltip mit Marker-Namen
             markerEl.title = name;
 
-            // Notizenbereich ein- und ausblenden
+            // Tooltip mit Marker-Namen anzeigen
             markerEl.addEventListener('mouseenter', function() {
                 marker.togglePopup();
             });
@@ -114,13 +133,34 @@
                 marker.togglePopup();
             });
 
-            // Notizenbereich
+            // Notizenbereich anzeigen/ausblenden
             markerEl.addEventListener('click', function() {
-                const notesDiv = marker.getPopup().getDOMContent().querySelector('.note-area');
+                const popupContent = marker.getPopup().getDOMContent();
+                const notesDiv = popupContent.querySelector('.note-area');
+                const saveButton = popupContent.querySelector('#save-notes');
+
                 notesDiv.style.display = notesDiv.style.display === 'block' ? 'none' : 'block';
+
+                // Notizen speichern
+                saveButton.addEventListener('click', function() {
+                    const notesText = popupContent.querySelector('textarea').value;
+                    const markerPosition = marker.getLngLat();
+                    markerData[name] = { notes: notesText, position: markerPosition };
+
+                    alert('Notizen gespeichert!');
+                });
             });
         });
 
+        // Funktion zum Speichern der Markerposition nach dem Verschieben
+        function saveMarkerPosition(name, position) {
+            markerData[name].position = position;
+        }
+
+        // Funktion zum Abrufen der gespeicherten Marker
+        function getSavedMarkers() {
+            return markerData;
+        }
     </script>
 
 </body>
