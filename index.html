@@ -52,7 +52,6 @@
             margin-right: 10px;
         }
 
-        /* Marker Farben */
         .markerColor {
             width: 20px;
             height: 20px;
@@ -62,7 +61,6 @@
             cursor: pointer;
         }
 
-        /* Notizbereich */
         .note-container {
             margin-top: 10px;
         }
@@ -123,12 +121,10 @@
 
     let markers = {};
 
-    // Marker hinzufügen
     document.getElementById('addMarker').addEventListener('click', function () {
         const name = document.getElementById('markerName').value;
         const color = document.getElementById('markerColor').value;
 
-        // Marker Position in der Mitte der Karte
         const lngLat = map.getCenter();
 
         const el = document.createElement('div');
@@ -139,11 +135,25 @@
             .setLngLat(lngLat)
             .addTo(map)
             .setPopup(new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button>`));
+                .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button>`))
+            .getElement().addEventListener('mousedown', function (e) {
+                // Marker verschieben
+                const onMouseMove = (e) => {
+                    const newLngLat = map.unproject([e.clientX, e.clientY]);
+                    marker.setLngLat([newLngLat.lng, newLngLat.lat]);
+                };
+
+                const onMouseUp = () => {
+                    map.off('mousemove', onMouseMove);
+                    map.off('mouseup', onMouseUp);
+                };
+
+                map.on('mousemove', onMouseMove);
+                map.once('mouseup', onMouseUp);
+            });
 
         markers[name] = { marker, color, notes: [] };
 
-        // Legende aktualisieren
         updateLegend(name, color);
     });
 
@@ -154,7 +164,6 @@
         legendContent.appendChild(legendItem);
     }
 
-    // Notizen speichern
     window.saveNotes = function (name) {
         const notesContainer = document.getElementById(`${name}-notes`);
         const textarea = document.querySelector(`textarea`);
@@ -166,7 +175,6 @@
         }
     }
 
-    // Notizen anzeigen
     function displayNotes(name) {
         const notesContainer = document.getElementById(`${name}-notes`);
         notesContainer.innerHTML = ''; // Vorherige Notizen löschen
@@ -179,7 +187,6 @@
         });
     }
 
-    // Notiz löschen
     window.deleteNote = function (name, index) {
         markers[name].notes.splice(index, 1);
         displayNotes(name);
