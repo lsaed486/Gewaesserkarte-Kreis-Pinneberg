@@ -82,6 +82,15 @@
             color: red;
             cursor: pointer;
         }
+
+        .delete-button {
+            margin-top: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -135,7 +144,13 @@
             .setLngLat(lngLat)
             .addTo(map)
             .setPopup(new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`<h3>${name}</h3><div class="note-container" id="${name}-notes"></div><textarea placeholder="Notizen..."></textarea><button onclick="saveNotes('${name}')">Speichern</button><button onclick="deleteMarker('${name}', this)">Marker löschen</button>`))
+                .setHTML(`
+                    <h3>${name}</h3>
+                    <div class="note-container" id="${name}-notes"></div>
+                    <textarea placeholder="Notizen..."></textarea>
+                    <button onclick="saveNotes('${name}')">Speichern</button>
+                    <button class="delete-button" onclick="deleteMarker('${name}')">Marker löschen</button>
+                `))
             .getElement().addEventListener('click', function () {
                 marker.togglePopup(); // Popup mit einem Klick öffnen/schließen
             });
@@ -198,12 +213,20 @@
         displayNotes(name);
     }
 
-    window.deleteMarker = function (name, btn) {
+    window.deleteMarker = function (name) {
         const marker = markers[name].marker;
         marker.remove(); // Marker von der Karte entfernen
         delete markers[name]; // Marker aus dem Objekt löschen
         document.getElementById(`${name}-notes`).innerHTML = ''; // Notizen löschen
-        btn.parentElement.parentElement.style.display = 'none'; // Popup ausblenden
+        const legendContent = document.getElementById('legendContent');
+        const legendItems = legendContent.children;
+
+        for (let i = 0; i < legendItems.length; i++) {
+            if (legendItems[i].innerText.includes(name)) {
+                legendContent.removeChild(legendItems[i]);
+                break;
+            }
+        }
     }
 
 </script>
