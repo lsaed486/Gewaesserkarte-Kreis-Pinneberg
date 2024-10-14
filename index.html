@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktive Angelkarte</title>
+    <title>Interaktive Karte</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
     <style>
         body, html {
@@ -16,9 +16,9 @@
         header {
             background-color: #3B5998;
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
-            font-size: 20px;
+            font-size: 18px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,7 +30,7 @@
         .marker {
             width: 30px;
             height: 30px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path fill="%23FF0000" d="M15 0C6.717 0 0 6.717 0 15s15 15 15 15 15-6.717 15-15S23.283 0 15 0zm0 22.5c-4.182 0-7.5-3.318-7.5-7.5S10.818 7.5 15 7.5 22.5 10.818 22.5 15 19.182 22.5 15 22.5z"/></svg>') no-repeat center;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF0000" width="24px" height="24px"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>') no-repeat center;
             background-size: contain;
         }
         .info-window {
@@ -62,13 +62,13 @@
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoibHNhZWQ0ODYiLCJhIjoiY20yNmxsNGZkMHhqbTJrc2o0dWg1OTRuYyJ9.iwQkgt5FL8kPQgpBozsakQ';
+    mapboxgl.accessToken = 'pk.eyJ1IjoibGVhcm5tYXBib3giLCJhIjoiY2t4dW80Z3A3MDlqeDJ1bng2dXpyZnl5NSJ9.wO-kXj5ToqMIeJdwWB4fNg';
 
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: [9.7945, 53.6617],
-        zoom: 9
+        center: [9.7945, 53.6617],  // Kartenmittelpunkt
+        zoom: 10
     });
 
     let markers = {};
@@ -78,16 +78,16 @@
     document.getElementById('set-marker').addEventListener('click', () => {
         const name = document.getElementById('marker-name').value;
         const color = document.getElementById('marker-color').value;
-        const coordinates = map.getCenter().toArray();
+        const coordinates = map.getCenter().toArray(); // Marker wird in der Mitte der Karte erstellt
 
         const markerElement = document.createElement('div');
         markerElement.className = 'marker';
-        markerElement.style.borderColor = color;
+        markerElement.style.backgroundColor = color;
 
         const marker = new mapboxgl.Marker(markerElement)
             .setLngLat(coordinates)
             .addTo(map)
-            .setDraggable(true);
+            .setDraggable(true); // Marker kann verschoben werden
 
         markerElement.addEventListener('click', () => {
             if (currentMarker) {
@@ -98,7 +98,7 @@
         });
 
         markers[name] = { marker, color };
-        document.getElementById('marker-name').value = '';
+        document.getElementById('marker-name').value = ''; // Input zurücksetzen
     });
 
     // Info-Fenster anzeigen
@@ -107,4 +107,58 @@
         infoWindow.className = 'info-window';
         infoWindow.style.backgroundColor = color;
         infoWindow.innerHTML = `
-           
+            <header>${name}</header>
+            <textarea id="note-input" placeholder="Notizen..."></textarea>
+            <button id="save-note">Speichern</button>
+            <button id="close-info">Schließen</button>
+            <button id="delete-info-marker">Marker löschen</button>
+        `;
+
+        document.body.appendChild(infoWindow);
+        infoWindow.style.left = `${marker.getLngLat().lng}px`;
+        infoWindow.style.top = `${marker.getLngLat().lat}px`;
+        infoWindow.style.display = 'block';
+
+        document.getElementById('save-note').addEventListener('click', () => {
+            const note = document.getElementById('note-input').value;
+            if (note) {
+                const noteLine = document.createElement('div');
+                noteLine.innerHTML = `${note} <button>X</button>`;
+                noteLine.querySelector('button').addEventListener('click', () => {
+                    noteLine.remove();
+                });
+                infoWindow.appendChild(noteLine);
+                document.getElementById('note-input').value = ''; 
+            }
+        });
+
+        document.getElementById('close-info').addEventListener('click', () => {
+            infoWindow.remove();
+        });
+
+        document.getElementById('delete-info-marker').addEventListener('click', () => {
+            if (confirm("Möchten Sie diesen Marker wirklich löschen?")) {
+                marker.remove();
+                infoWindow.remove();
+                const name = Object.keys(markers).find(key => markers[key].marker === marker);
+                delete markers[name];
+                currentMarker = null;
+            }
+        });
+    }
+
+    // Marker löschen
+    document.getElementById('delete-marker').addEventListener('click', () => {
+        if (currentMarker) {
+            if (confirm("Möchten Sie diesen Marker wirklich löschen?")) {
+                currentMarker.remove();
+                const name = Object.keys(markers).find(key => markers[key].marker === currentMarker);
+                delete markers[name];
+                currentMarker = null;
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
