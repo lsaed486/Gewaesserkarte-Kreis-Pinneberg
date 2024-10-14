@@ -6,22 +6,26 @@
     <title>Interaktive Angelkarte</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        body, html {
             margin: 0;
             padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         header {
             background-color: #3B5998;
             color: white;
-            padding: 10px;
+            padding: 20px;
+            text-align: center;
+            font-size: 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            gap: 20px;
         }
         #map {
-            width: 100%;
-            height: 600px;
+            flex-grow: 1;
         }
         .marker {
             width: 30px;
@@ -30,24 +34,28 @@
             background-size: contain;
         }
         .info-window {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255, 0.5);
             border-radius: 5px;
             padding: 10px;
+            position: absolute;
             display: none;
             z-index: 1;
+            width: 200px;
+        }
+        .info-window header {
+            font-weight: bold;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div>
-        <button id="set-marker">Marker setzen</button>
-        <input type="text" id="marker-name" placeholder="Marker Name">
-        <input type="color" id="marker-color" value="#FF0000">
-        <button id="delete-marker">Marker löschen</button>
-    </div>
+    <button id="set-marker">Marker setzen</button>
+    <input type="text" id="marker-name" placeholder="Marker Name">
+    <input type="color" id="marker-color" value="#FF0000">
+    <input type="text" id="color-name" placeholder="Farbe benennen">
+    <button id="delete-marker">Marker löschen</button>
 </header>
 
 <div id="map"></div>
@@ -66,6 +74,7 @@
     let markers = {};
     let currentMarker = null;
 
+    // Marker setzen
     document.getElementById('set-marker').addEventListener('click', () => {
         const name = document.getElementById('marker-name').value;
         const color = document.getElementById('marker-color').value;
@@ -80,14 +89,9 @@
             .addTo(map)
             .setDraggable(true);
 
-        marker.on('dragend', () => {
-            const lngLat = marker.getLngLat();
-            console.log(`Marker verschoben nach: ${lngLat.lng}, ${lngLat.lat}`);
-        });
-
         markerElement.addEventListener('click', () => {
             if (currentMarker) {
-                currentMarker.remove(); 
+                currentMarker.remove();
             }
             currentMarker = marker;
             showInfoWindow(marker, name, color);
@@ -97,64 +101,10 @@
         document.getElementById('marker-name').value = '';
     });
 
+    // Info-Fenster anzeigen
     function showInfoWindow(marker, name, color) {
         const infoWindow = document.createElement('div');
         infoWindow.className = 'info-window';
         infoWindow.style.backgroundColor = color;
         infoWindow.innerHTML = `
-            <strong>${name}</strong>
-            <div>
-                <textarea id="note-input" placeholder="Notizen..."></textarea>
-                <button id="save-note">Speichern</button>
-                <button id="close-info">Schließen</button>
-                <button id="delete-info-marker">Marker löschen</button>
-            </div>
-        `;
-
-        document.body.appendChild(infoWindow);
-        infoWindow.style.left = `${marker.getLngLat().lng}px`;
-        infoWindow.style.top = `${marker.getLngLat().lat}px`;
-        infoWindow.style.display = 'block';
-
-        document.getElementById('save-note').addEventListener('click', () => {
-            const note = document.getElementById('note-input').value;
-            if (note) {
-                const noteLine = document.createElement('div');
-                noteLine.innerHTML = `${note} <button>X</button>`;
-                noteLine.querySelector('button').addEventListener('click', () => {
-                    noteLine.remove();
-                });
-                infoWindow.appendChild(noteLine);
-                document.getElementById('note-input').value = ''; 
-            }
-        });
-
-        document.getElementById('close-info').addEventListener('click', () => {
-            infoWindow.remove();
-        });
-
-        document.getElementById('delete-info-marker').addEventListener('click', () => {
-            if (confirm("Möchten Sie diesen Marker wirklich löschen?")) {
-                marker.remove();
-                infoWindow.remove();
-                const name = Object.keys(markers).find(key => markers[key].marker === marker);
-                delete markers[name];
-                currentMarker = null;
-            }
-        });
-    }
-
-    document.getElementById('delete-marker').addEventListener('click', () => {
-        if (currentMarker) {
-            if (confirm("Möchten Sie diesen Marker wirklich löschen?")) {
-                currentMarker.remove();
-                const name = Object.keys(markers).find(key => markers[key].marker === currentMarker);
-                delete markers[name];
-                currentMarker = null;
-            }
-        }
-    });
-</script>
-
-</body>
-</html>
+           
