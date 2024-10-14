@@ -24,38 +24,18 @@
             height: 600px;
         }
         .marker {
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-bottom: 30px solid;
+            width: 30px;
+            height: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><path fill="%23FF0000" d="M15 0C6.717 0 0 6.717 0 15s15 15 15 15 15-6.717 15-15S23.283 0 15 0zm0 22.5c-4.182 0-7.5-3.318-7.5-7.5S10.818 7.5 15 7.5 22.5 10.818 22.5 15 19.182 22.5 15 22.5z"/></svg>') no-repeat center;
+            background-size: contain;
         }
         .info-window {
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.5); /* 50% Sättigung */
+            background-color: rgba(255, 255, 255, 0.9);
             border-radius: 5px;
             padding: 10px;
             display: none;
-        }
-        .legend {
-            position: absolute;
-            bottom: 30px;
-            right: 10px;
-            background-color: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .note {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .note button {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: red;
+            z-index: 1;
         }
     </style>
 </head>
@@ -71,7 +51,6 @@
 </header>
 
 <div id="map"></div>
-<div class="legend" id="legend"></div>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 <script>
@@ -90,11 +69,11 @@
     document.getElementById('set-marker').addEventListener('click', () => {
         const name = document.getElementById('marker-name').value;
         const color = document.getElementById('marker-color').value;
-        const coordinates = map.getCenter().toArray(); // Startposition in der Mitte der Karte
+        const coordinates = map.getCenter().toArray();
 
         const markerElement = document.createElement('div');
         markerElement.className = 'marker';
-        markerElement.style.borderBottomColor = color;
+        markerElement.style.borderColor = color;
 
         const marker = new mapboxgl.Marker(markerElement)
             .setLngLat(coordinates)
@@ -108,14 +87,13 @@
 
         markerElement.addEventListener('click', () => {
             if (currentMarker) {
-                currentMarker.remove(); // Vorherigen Marker entfernen
+                currentMarker.remove(); 
             }
             currentMarker = marker;
             showInfoWindow(marker, name, color);
         });
 
         markers[name] = { marker, color };
-        updateLegend();
         document.getElementById('marker-name').value = '';
     });
 
@@ -128,7 +106,8 @@
             <div>
                 <textarea id="note-input" placeholder="Notizen..."></textarea>
                 <button id="save-note">Speichern</button>
-                <button id="delete-marker-from-info">Löschen</button>
+                <button id="close-info">Schließen</button>
+                <button id="delete-info-marker">Marker löschen</button>
             </div>
         `;
 
@@ -141,23 +120,26 @@
             const note = document.getElementById('note-input').value;
             if (note) {
                 const noteLine = document.createElement('div');
-                noteLine.className = 'note';
                 noteLine.innerHTML = `${note} <button>X</button>`;
                 noteLine.querySelector('button').addEventListener('click', () => {
                     noteLine.remove();
                 });
                 infoWindow.appendChild(noteLine);
-                document.getElementById('note-input').value = ''; // Notizfeld leeren
+                document.getElementById('note-input').value = ''; 
             }
         });
 
-        document.getElementById('delete-marker-from-info').addEventListener('click', () => {
+        document.getElementById('close-info').addEventListener('click', () => {
+            infoWindow.remove();
+        });
+
+        document.getElementById('delete-info-marker').addEventListener('click', () => {
             if (confirm("Möchten Sie diesen Marker wirklich löschen?")) {
                 marker.remove();
                 infoWindow.remove();
+                const name = Object.keys(markers).find(key => markers[key].marker === marker);
                 delete markers[name];
                 currentMarker = null;
-                updateLegend();
             }
         });
     }
@@ -169,20 +151,10 @@
                 const name = Object.keys(markers).find(key => markers[key].marker === currentMarker);
                 delete markers[name];
                 currentMarker = null;
-                updateLegend();
             }
         }
     });
-
-    function updateLegend() {
-        const legend = document.getElementById('legend');
-        legend.innerHTML = '<h4>Marker Legend</h4>';
-        for (const name in markers) {
-            const color = markers[name].color;
-            legend.innerHTML += `<div style="color:${color}">${name}</div>`;
-        }
-    }
-
 </script>
+
 </body>
 </html>
